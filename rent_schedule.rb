@@ -1,8 +1,13 @@
 require 'date'
 
 class RentSchedule
-  CURRENCY = 'PHP'.freeze
   FREQUENCIES = %w[weekly fortnightly monthly].freeze
+  PAYMENT_METHODS = %w[instant credit_card bank_transfer].freeze
+  PAYMENT_PROCESSING_DAYS = {
+    "instant" => 0,
+    "credit_card" => 2,
+    "bank_transfer" => 3
+  }.freeze
 
   class InvalidInputError < StandardError; end
   class InvalidDateError < StandardError; end
@@ -12,6 +17,7 @@ class RentSchedule
     @rent_frequency = validate_frequency(rent[:rent_frequency])
     @rent_start_date = parse_date(rent[:rent_start_date], 'rent_start_date')
     @rent_end_date = parse_date(rent[:rent_end_date], 'rent_end_date')
+    @payment_method = validate_payment_method(rent[:payment_method] || 'instant')
     @rent_change = normalize_rent_change(rent_change)
 
     validate_date_range
@@ -24,15 +30,16 @@ class RentSchedule
     change_index = 0
 
     while current_date <= @rent_end_date
-      while change_index < @rent_change.length && 
-         @rent_change[change_index][:effective_date] <= current_date
+      processing_days = PAYMENT_PROCESSING_DAYS.fetch(@payment_method, 0)
+      while change_index < @rent_change.length && @rent_change[change_index][:effective_date] <= current_date
         current_rent_amount = @rent_change[change_index][:amount]
         change_index += 1
       end
 
       payment_dates << {
-        date: current_date.to_s,
-        amount: current_rent_amount
+        payment_date: (current_date - processing_days).to_s,
+        amount: current_rent_amount,
+        method: @payment_method
       }
       
       current_date = next_payment_date(current_date)
@@ -63,6 +70,14 @@ class RentSchedule
             "Invalid frequency: '#{frequency}'. Must be one of: #{FREQUENCIES.join(', ')}"
     end
     frequency.downcase
+  end
+
+  def validate_payment_method(payment_method)
+    unless PAYMENT_METHODS.include?(payment_method.to_s.downcase)
+      raise InvalidInputError, 
+            "Invalid payment method: '#{payment_method}'. Must be one of: #{PAYMENT_METHODS.join(', ')}"
+    end
+    payment_method.downcase
   end
 
   def parse_date(date_str, date_type)

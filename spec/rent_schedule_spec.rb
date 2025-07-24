@@ -7,7 +7,8 @@ RSpec.describe RentSchedule do
       rent_amount: 1000,
       rent_frequency: 'monthly',
       rent_start_date: '2025-07-01',
-      rent_end_date: '2025-10-01'
+      rent_end_date: '2025-10-01',
+      payment_method: 'instant'
     }
   end
 
@@ -31,6 +32,7 @@ RSpec.describe RentSchedule do
         expect(subject.instance_variable_get(:@rent_frequency)).to eq('monthly')
         expect(subject.instance_variable_get(:@rent_start_date)).to eq(Date.parse('2025-07-01'))
         expect(subject.instance_variable_get(:@rent_end_date)).to eq(Date.parse('2025-10-01'))
+        expect(subject.instance_variable_get(:@payment_method)).to eq('instant')
         expect(subject.instance_variable_get(:@rent_change)).to eq([])
       end
     end
@@ -64,6 +66,17 @@ RSpec.describe RentSchedule do
         expect { subject }.to raise_error(
           RentSchedule::InvalidInputError, 
           "Invalid frequency: 'daily'. Must be one of: weekly, fortnightly, monthly"
+        )
+      end
+    end
+
+    context 'with invalid payment method' do
+      let(:rent) { valid_rent.merge(payment_method: 'cash') }
+      
+      it 'raises an InvalidInputError' do
+        expect { subject }.to raise_error(
+          RentSchedule::InvalidInputError, 
+          "Invalid payment method: 'cash'. Must be one of: instant, credit_card, bank_transfer"
         )
       end
     end
@@ -141,17 +154,18 @@ RSpec.describe RentSchedule do
           rent_amount: 1000,
           rent_frequency: 'weekly',
           rent_start_date: '2025-07-01',
-          rent_end_date: '2025-07-22'
+          rent_end_date: '2025-07-22',
+          payment_method: 'instant'
         }
       end
 
       context 'without rent change' do
         it 'returns correct weekly payment dates' do
           expected_dates = [
-            { date: '2025-07-01', amount: 1000 },
-            { date: '2025-07-08', amount: 1000 },
-            { date: '2025-07-15', amount: 1000 },
-            { date: '2025-07-22', amount: 1000 }
+            { payment_date: '2025-07-01', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-08', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-22', amount: 1000, method: 'instant' }
           ]
           expect(subject).to eq(expected_dates)
         end
@@ -162,10 +176,10 @@ RSpec.describe RentSchedule do
 
         it 'applies rent changes at correct effective dates' do
           expected_dates = [
-            { date: '2025-07-01', amount: 1000 },
-            { date: '2025-07-08', amount: 1000 },
-            { date: '2025-07-15', amount: 1200 },
-            { date: '2025-07-22', amount: 1200 }
+            { payment_date: '2025-07-01', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-08', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-15', amount: 1200, method: 'instant' },
+            { payment_date: '2025-07-22', amount: 1200, method: 'instant' }
           ]
 
           expect(subject).to eq(expected_dates)
@@ -179,17 +193,18 @@ RSpec.describe RentSchedule do
           rent_amount: 1000,
           rent_frequency: 'fortnightly',
           rent_start_date: '2025-07-01',
-          rent_end_date: '2025-08-22'
+          rent_end_date: '2025-08-22',
+          payment_method: 'instant'
         }
       end
       
       context 'without rent change' do
         it 'returns correct fortnightly payment dates' do
           expected_dates = [
-            { date: '2025-07-01', amount: 1000 },
-            { date: '2025-07-15', amount: 1000 },
-            { date: '2025-07-29', amount: 1000 },
-            { date: '2025-08-12', amount: 1000 }
+            { payment_date: '2025-07-01', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-29', amount: 1000, method: 'instant' },
+            { payment_date: '2025-08-12', amount: 1000, method: 'instant' }
           ]
 
           expect(subject).to eq(expected_dates)
@@ -201,10 +216,10 @@ RSpec.describe RentSchedule do
 
         it 'applies rent changes at correct effective dates' do
           expected_dates = [
-            { date: '2025-07-01', amount: 1000 },
-            { date: '2025-07-15', amount: 1000 },
-            { date: '2025-07-29', amount: 1200 },
-            { date: '2025-08-12', amount: 1200 }
+            { payment_date: '2025-07-01', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-07-29', amount: 1200, method: 'instant' },
+            { payment_date: '2025-08-12', amount: 1200, method: 'instant' }
           ]
 
           expect(subject).to eq(expected_dates)
@@ -225,11 +240,11 @@ RSpec.describe RentSchedule do
       context 'without rent change' do
         it 'returns correct monthly payment dates' do
           expected_dates = [
-            { date: '2025-07-15', amount: 1000 },
-            { date: '2025-08-15', amount: 1000 },
-            { date: '2025-09-15', amount: 1000 },
-          { date: '2025-10-15', amount: 1000 }
-        ]
+            { payment_date: '2025-07-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-08-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-09-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-10-15', amount: 1000, method: 'instant' }
+          ]
         
           expect(subject).to eq(expected_dates)
         end
@@ -240,14 +255,60 @@ RSpec.describe RentSchedule do
 
         it 'applies rent changes at correct effective dates' do
           expected_dates = [
-            { date: '2025-07-15', amount: 1000 },
-            { date: '2025-08-15', amount: 1200 },
-            { date: '2025-09-15', amount: 1200 },
-            { date: '2025-10-15', amount: 1200 }
+            { payment_date: '2025-07-15', amount: 1000, method: 'instant' },
+            { payment_date: '2025-08-15', amount: 1200, method: 'instant' },
+            { payment_date: '2025-09-15', amount: 1200, method: 'instant' },
+            { payment_date: '2025-10-15', amount: 1200, method: 'instant' }
           ]
 
           expect(subject).to eq(expected_dates)
         end
+      end
+    end
+
+    context 'with credit card payment method' do
+      let(:rent) do
+        {
+          rent_amount: 1000,
+          rent_frequency: 'monthly',
+          rent_start_date: '2025-07-15',
+          rent_end_date: '2025-10-15',
+          payment_method: 'credit_card'
+        }
+      end
+
+      expected_dates = [
+        { payment_date: '2025-07-13', amount: 1000, method: 'credit_card' },
+        { payment_date: '2025-08-13', amount: 1000, method: 'credit_card' },
+        { payment_date: '2025-09-13', amount: 1000, method: 'credit_card' },
+        { payment_date: '2025-10-13', amount: 1000, method: 'credit_card' }
+      ]
+      
+      it 'returns correct monthly payment dates' do
+        expect(subject).to eq(expected_dates)
+      end
+    end
+
+    context 'with bank transfer payment method' do
+      let(:rent) do
+        {
+          rent_amount: 1000,
+          rent_frequency: 'monthly',
+          rent_start_date: '2025-07-15',
+          rent_end_date: '2025-10-15',
+          payment_method: 'bank_transfer'
+        }
+      end
+
+      expected_dates = [
+        { payment_date: '2025-07-12', amount: 1000, method: 'bank_transfer' },
+        { payment_date: '2025-08-12', amount: 1000, method: 'bank_transfer' },
+        { payment_date: '2025-09-12', amount: 1000, method: 'bank_transfer' },
+        { payment_date: '2025-10-12', amount: 1000, method: 'bank_transfer' }
+      ]
+      
+      it 'returns correct monthly payment dates' do
+        expect(subject).to eq(expected_dates)
       end
     end
   end

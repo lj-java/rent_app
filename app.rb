@@ -34,6 +34,12 @@ def get_user_input
       },
       error: "Invalid date format or end date must be after start date. Please use YYYY-MM-DD.",
       transform: ->(input) { input }
+    },
+    payment_method: {
+      prompt: "Select Payment Method:\n  1. Instant\n  2. Credit Card (2 days processing time)\n  3. Bank Transfer (3 days processing time)\nEnter your choice (1, 2, or 3): ",
+      validate: ->(input) { (1..3).cover?(input.to_i) },
+      error: "Invalid choice. Please enter 1, 2, or 3.",
+      transform: ->(input) { %w[instant credit_card bank_transfer][input.to_i - 1] }
     }
   }
 
