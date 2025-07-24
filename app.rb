@@ -1,5 +1,5 @@
 require 'date'
-require_relative 'rent'
+require_relative 'rent_schedule'
 
 def get_user_input
   rent_details = {}
@@ -69,9 +69,9 @@ end
 # Main
 puts "--- Rent Payment Scheduler --- \n\n"
 begin
-  user_rent_input = get_user_input
-  rent = Rent.new(user_rent_input)
-  payment_dates = rent.calculate_payment_dates
+  rent_input = get_user_input
+  rent_schedule = RentSchedule.new(rent_input)
+  payment_dates = rent_schedule.calculate_payment_dates
 
   puts "\nCalculated Payment Dates:"
   payment_dates.each { |date| puts date.to_s }

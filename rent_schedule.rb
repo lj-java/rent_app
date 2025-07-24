@@ -1,17 +1,17 @@
 require 'date'
 
-class Rent
+class RentSchedule
   CURRENCY = 'PHP'.freeze
   FREQUENCIES = %w[weekly fortnightly monthly].freeze
 
   class InvalidInputError < StandardError; end
   class InvalidDateError < StandardError; end
 
-  def initialize(rent_details)
-    @rent_amount = validate_amount(rent_details[:rent_amount])
-    @rent_frequency = validate_frequency(rent_details[:rent_frequency])
-    @rent_start_date = parse_date(rent_details[:rent_start_date], 'rent_start_date')
-    @rent_end_date = parse_date(rent_details[:rent_end_date], 'rent_end_date')
+  def initialize(rent)
+    @rent_amount = validate_amount(rent[:rent_amount])
+    @rent_frequency = validate_frequency(rent[:rent_frequency])
+    @rent_start_date = parse_date(rent[:rent_start_date], 'rent_start_date')
+    @rent_end_date = parse_date(rent[:rent_end_date], 'rent_end_date')
 
     validate_date_range
   end

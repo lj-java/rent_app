@@ -1,7 +1,7 @@
 require 'rspec'
-require_relative '../rent'
+require_relative '../rent_schedule'
 
-RSpec.describe Rent do
+RSpec.describe RentSchedule do
   let(:valid_input) do
     {
       rent_amount: 1000,
@@ -30,7 +30,7 @@ RSpec.describe Rent do
       
       it 'raises an InvalidInputError' do
         expect { subject }.to raise_error(
-          Rent::InvalidInputError,
+          RentSchedule::InvalidInputError,
           'Amount must be a positive number'
         )
       end
@@ -41,7 +41,7 @@ RSpec.describe Rent do
       
       it 'raises an InvalidInputError' do
         expect { subject }.to raise_error(
-          Rent::InvalidInputError,
+          RentSchedule::InvalidInputError,
           'Amount must be a positive number'
         )
       end
@@ -52,7 +52,7 @@ RSpec.describe Rent do
       
       it 'raises an InvalidInputError' do
         expect { subject }.to raise_error(
-          Rent::InvalidInputError, 
+          RentSchedule::InvalidInputError, 
           "Invalid frequency: 'daily'. Must be one of: weekly, fortnightly, monthly"
         )
       end
@@ -63,7 +63,7 @@ RSpec.describe Rent do
       
       it 'raises an InvalidDateError' do
         expect { subject }.to raise_error(
-          Rent::InvalidDateError,
+          RentSchedule::InvalidDateError,
           "Invalid rent_start_date: '2025/07/01'. Please use YYYY-MM-DD format"
         )
       end
@@ -74,7 +74,7 @@ RSpec.describe Rent do
       
       it 'raises an InvalidDateError' do
         expect { subject }.to raise_error(
-          Rent::InvalidDateError,
+          RentSchedule::InvalidDateError,
           'Start date (2025-10-01) cannot be after end date (2025-07-01)'
         )
       end
