@@ -7,11 +7,12 @@ class RentSchedule
   class InvalidInputError < StandardError; end
   class InvalidDateError < StandardError; end
 
-  def initialize(rent)
+  def initialize(rent, rent_change: [])
     @rent_amount = validate_amount(rent[:rent_amount])
     @rent_frequency = validate_frequency(rent[:rent_frequency])
     @rent_start_date = parse_date(rent[:rent_start_date], 'rent_start_date')
     @rent_end_date = parse_date(rent[:rent_end_date], 'rent_end_date')
+    @rent_change = normalize_rent_change(rent_change)
 
     validate_date_range
   end
@@ -19,9 +20,21 @@ class RentSchedule
   def calculate_payment_dates
     payment_dates = []
     current_date = @rent_start_date
+    current_rent_amount = @rent_amount
+    change_index = 0
 
     while current_date <= @rent_end_date
-      payment_dates << current_date
+      while change_index < @rent_change.length && 
+         @rent_change[change_index][:effective_date] <= current_date
+        current_rent_amount = @rent_change[change_index][:amount]
+        change_index += 1
+      end
+
+      payment_dates << {
+        date: current_date.to_s,
+        amount: current_rent_amount
+      }
+      
       current_date = next_payment_date(current_date)
     end
 
@@ -29,6 +42,15 @@ class RentSchedule
   end
 
   private
+
+  def normalize_rent_change(rent_change)
+    rent_change.map do |change|
+      {
+        amount: validate_amount(change[:rent_amount]),
+        effective_date: parse_date(change[:effective_date], 'effective_date')
+      }
+    end.sort_by { |change| change[:effective_date] }
+  end
 
   def validate_amount(amount)
     raise InvalidInputError, 'Amount must be a positive number' unless amount.is_a?(Numeric) && amount.positive?

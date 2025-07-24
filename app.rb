@@ -3,6 +3,7 @@ require_relative 'rent_schedule'
 
 def get_user_input
   rent_details = {}
+  rent_change = []
 
   # Define input requirements
   input_requirements = {
@@ -36,12 +37,48 @@ def get_user_input
     }
   }
 
-  # Get each input
+  # Get rent details
   input_requirements.each do |field, config|
     rent_details[field] = get_valid_input(config)
   end
 
-  rent_details
+  # Define rent changes input requirements
+  rent_changes_requirements = {
+    rent_amount: {
+      prompt: "Enter New Rent Amount: ",
+      validate: ->(input) { input =~ /^\d+(\.\d{1,2})?$/ },
+      error: "Invalid amount. Please enter a valid number.",
+      transform: ->(input) { input.to_f }
+    },
+    effective_date: {
+      prompt: "Enter Effective Date (YYYY-MM-DD): ",
+      validate: ->(input) { 
+        input.match?(/^\d{4}-\d{2}-\d{2}$/) && 
+        valid_date?(input) &&
+        Date.parse(input) > Date.parse(rent_details[:rent_start_date]) &&
+        Date.parse(input) <= Date.parse(rent_details[:rent_end_date])
+      },
+      error: "Invalid date format or date outside rental period. Please use YYYY-MM-DD between #{rent_details[:rent_start_date]} and #{rent_details[:rent_end_date]}.",
+      transform: ->(input) { input }
+    }
+  }
+
+  # Get rent changes
+  # can add multiple rent changes
+  loop do
+    print "\nDo you want to add a rent change? (yes/no): "
+    add_change = gets.chomp.downcase
+    break unless add_change == 'yes' || add_change == 'y'
+
+    change = {}
+    rent_changes_requirements.each do |field, config|
+      change[field] = get_valid_input(config)
+    end
+    
+    rent_change << change
+  end
+
+  return rent_details, rent_change
 end
 
 private
@@ -69,8 +106,8 @@ end
 # Main
 puts "--- Rent Payment Scheduler --- \n\n"
 begin
-  rent_input = get_user_input
-  rent_schedule = RentSchedule.new(rent_input)
+  rent_input, rent_change = get_user_input
+  rent_schedule = RentSchedule.new(rent_input, rent_change: rent_change)
   payment_dates = rent_schedule.calculate_payment_dates
 
   puts "\nCalculated Payment Dates:"
